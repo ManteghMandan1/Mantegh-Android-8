@@ -34,6 +34,8 @@ jobs:
           cp arch/arm/boot/zImage anykernel/zImage
           cd anykernel
           sed -i 's/kernel.string=.*/kernel.string=Mantegh Kernel/' anykernel.sh
+          sed -i 's/device.name0=.*/device.name0=k3gxx/' anykernel.sh
+          sed -i 's/device.name1=.*/device.name1=k3g/' anykernel.sh
           sed -i 's/BLOCK=.*/BLOCK=\/dev\/block\/platform\/dw_mmc.0\/by-name\/BOOT;/' anykernel.sh
           sed -i 's/IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/' anykernel.sh
           zip -r9 ../Mantegh-Kernel.zip . -x .git README.md
