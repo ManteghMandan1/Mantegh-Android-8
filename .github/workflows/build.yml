@@ -27,7 +27,7 @@ jobs:
           export ARCH=arm
           export CROSS_COMPILE=$TOOLCHAIN_BIN/arm-eabi-
           make lineage_k3gxx_defconfig
-          make -j$(nproc)
+          make -j$(nproc) HOSTCFLAGS="-fcommon"
 
       - name: Package with AnyKernel3
         run: |
