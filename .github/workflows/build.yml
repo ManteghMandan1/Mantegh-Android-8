@@ -12,7 +12,11 @@ jobs:
 
       - name: Get toolchain
         run: |
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8 toolchain
+          git clone --depth=1 https://github.com/SaberMod/android_prebuilts_gcc_linux-x86_arm_sabermod-arm-eabi-4.8 toolchain || \
+          git clone --depth=1 https://github.com/khadas/android_prebuilts_gcc_linux-x86_arm_arm-eabi-4.8 toolchain
+          find toolchain -iname "*arm-eabi-gcc*"
+          TOOLCHAIN_BIN=$(dirname $(find toolchain -iname "arm-eabi-gcc" | head -1))
+          echo "TOOLCHAIN_BIN=$TOOLCHAIN_BIN" >> $GITHUB_ENV
 
       - name: Get AnyKernel3
         run: |
@@ -21,7 +25,7 @@ jobs:
       - name: Build kernel
         run: |
           export ARCH=arm
-          export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/bin/arm-eabi-
+          export CROSS_COMPILE=$TOOLCHAIN_BIN/arm-eabi-
           make lineage_k3gxx_defconfig
           make -j$(nproc)
 
