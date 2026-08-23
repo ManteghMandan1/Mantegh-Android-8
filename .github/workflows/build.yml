@@ -6,17 +6,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout kernel source
         uses: actions/checkout@v4
 
       - name: Get toolchain
         run: |
-          git clone --depth=1 https://github.com/SaberMod/android_prebuilts_gcc_linux-x86_arm_sabermod-arm-eabi-4.8 toolchain || \
-          git clone --depth=1 https://github.com/khadas/android_prebuilts_gcc_linux-x86_arm_arm-eabi-4.8 toolchain
-          find toolchain -iname "*arm-eabi-gcc*"
-          TOOLCHAIN_BIN=$(dirname $(find toolchain -iname "arm-eabi-gcc" | head -1))
-          echo "TOOLCHAIN_BIN=$TOOLCHAIN_BIN" >> $GITHUB_ENV
+          git clone --depth=1 \
+            https://github.com/SaberMod/android_prebuilts_gcc_linux-x86_arm_sabermod-arm-eabi-4.8 \
+            toolchain || \
+          git clone --depth=1 \
+            https://github.com/khadas/android_prebuilts_gcc_linux-x86_arm_arm-eabi-4.8 \
+            toolchain
+
+          TOOLCHAIN_BIN=$(dirname "$(find toolchain -type f -name arm-eabi-gcc | head -1)")
+
+          if [ -z "$TOOLCHAIN_BIN" ]; then
+            echo "ERROR: arm-eabi-gcc not found!"
+            exit 1
+          fi
+
+          echo "Toolchain: $TOOLCHAIN_BIN"
+          "$TOOLCHAIN_BIN/arm-eabi-gcc" --version
+
+          echo "TOOLCHAIN_BIN=$TOOLCHAIN_BIN" >> "$GITHUB_ENV"
 
       - name: Get AnyKernel3
         run: |
@@ -25,19 +39,38 @@ jobs:
       - name: Build kernel
         run: |
           export ARCH=arm
-          export CROSS_COMPILE=$TOOLCHAIN_BIN/arm-eabi-
+          export CROSS_COMPILE="$TOOLCHAIN_BIN/arm-eabi-"
+
           make lineage_k3gxx_defconfig
-          make -j$(nproc) HOSTCFLAGS="-fcommon"
+          make -j"$(nproc)" HOSTCFLAGS="-fcommon"
+
+          test -f arch/arm/boot/zImage
+
+          echo "Kernel built successfully:"
+          ls -lh arch/arm/boot/zImage
 
       - name: Package with AnyKernel3
         run: |
           cp arch/arm/boot/zImage anykernel/zImage
+
           cd anykernel
-          sed -i 's/kernel.string=.*/kernel.string=Mantegh Kernel/' anykernel.sh
-          sed -i 's/do.devicecheck=1/do.devicecheck=0/' anykernel.sh
-          sed -i 's/BLOCK=.*/BLOCK=\/dev\/block\/platform\/dw_mmc.0\/by-name\/BOOT;/' anykernel.sh
-          sed -i 's/IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/' anykernel.sh
-          zip -r9 ../Mantegh-Kernel.zip . -x .git README.md
+
+          sed -i 's/^kernel.string=.*/kernel.string=Mantegh Kernel/' anykernel.sh
+          sed -i 's/^do.devicecheck=.*/do.devicecheck=0/' anykernel.sh
+          sed -i 's|^BLOCK=.*|BLOCK=/dev/block/platform/12200000.dwmmc0/by-name/BOOT;|' anykernel.sh
+          sed -i 's/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0/' anykernel.sh
+
+          echo "AnyKernel configuration:"
+          grep -E '^(kernel.string|do.devicecheck|BLOCK|IS_SLOT_DEVICE)' anykernel.sh
+
+          zip -r9 ../Mantegh-Kernel.zip . \
+            -x ".git/*" \
+            -x "README.md"
+
+      - name: Check ZIP
+        run: |
+          test -f Mantegh-Kernel.zip
+          unzip -l Mantegh-Kernel.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
