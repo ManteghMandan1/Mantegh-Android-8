@@ -1,0 +1,41 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+
+      - name: Get toolchain
+        run: |
+          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8 toolchain
+
+      - name: Get AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3 anykernel
+
+      - name: Build kernel
+        run: |
+          export ARCH=arm
+          export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain/bin/arm-eabi-
+          make lineage_k3gxx_defconfig
+          make -j$(nproc)
+
+      - name: Package with AnyKernel3
+        run: |
+          cp arch/arm/boot/zImage anykernel/zImage
+          cd anykernel
+          sed -i 's/kernel.string=.*/kernel.string=Mantegh Kernel/' anykernel.sh
+          sed -i 's/BLOCK=.*/BLOCK=\/dev\/block\/platform\/dw_mmc.0\/by-name\/BOOT;/' anykernel.sh
+          sed -i 's/IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0;/' anykernel.sh
+          zip -r9 ../Mantegh-Kernel.zip . -x .git README.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mantegh-Kernel
+          path: Mantegh-Kernel.zip
