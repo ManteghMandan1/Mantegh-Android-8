@@ -42,6 +42,25 @@ jobs:
           export CROSS_COMPILE="$TOOLCHAIN_BIN/arm-eabi-"
 
           make lineage_k3gxx_defconfig
+
+          echo "========================================"
+          echo "       FINAL WIFI KERNEL CONFIG"
+          echo "========================================"
+
+          grep -E 'CONFIG_(WLAN|BCMDHD|BCM|CFG80211|DHD)' .config || true
+
+          echo "========================================"
+          echo "       CHECKING BCMDHD"
+          echo "========================================"
+
+          if grep -q '^CONFIG_BCMDHD=y' .config; then
+            echo "CONFIG_BCMDHD=y FOUND"
+          else
+            echo "WARNING: CONFIG_BCMDHD=y NOT FOUND"
+          fi
+
+          echo "========================================"
+
           make -j"$(nproc)" HOSTCFLAGS="-fcommon"
 
           test -f arch/arm/boot/zImage
@@ -60,8 +79,13 @@ jobs:
           sed -i 's|^BLOCK=.*|BLOCK=/dev/block/mmcblk0p9;|' anykernel.sh
           sed -i 's/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0/' anykernel.sh
 
-          echo "AnyKernel configuration:"
+          echo "========================================"
+          echo "       ANYKERNEL CONFIGURATION"
+          echo "========================================"
+
           grep -E '^(kernel.string|do.devicecheck|BLOCK|IS_SLOT_DEVICE)' anykernel.sh
+
+          echo "========================================"
 
           zip -r9 ../Mantegh-Kernel.zip . \
             -x ".git/*" \
@@ -70,6 +94,11 @@ jobs:
       - name: Check ZIP
         run: |
           test -f Mantegh-Kernel.zip
+
+          echo "========================================"
+          echo "       KERNEL ZIP CONTENTS"
+          echo "========================================"
+
           unzip -l Mantegh-Kernel.zip
 
       - name: Upload artifact
