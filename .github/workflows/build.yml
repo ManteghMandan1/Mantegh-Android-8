@@ -57,7 +57,7 @@ jobs:
 
           sed -i 's/^kernel.string=.*/kernel.string=Mantegh Kernel/' anykernel.sh
           sed -i 's/^do.devicecheck=.*/do.devicecheck=0/' anykernel.sh
-          sed -i 's|^BLOCK=.*|BLOCK=/dev/block/platform/12200000.dwmmc0/by-name/BOOT;|' anykernel.sh
+          sed -i 's|^BLOCK=.*|BLOCK=/dev/block/mmcblk0p9;|' anykernel.sh
           sed -i 's/^IS_SLOT_DEVICE=.*/IS_SLOT_DEVICE=0/' anykernel.sh
 
           echo "AnyKernel configuration:"
