@@ -38,12 +38,24 @@ jobs:
 
       - name: Debug BCMDHD Kconfig chain
         run: |
-          echo "=== Is bcmdhd Kconfig sourced? ==="
-          grep -rn "bcmdhd" drivers/net/wireless/Kconfig || echo "NOT FOUND in wireless Kconfig"
-          echo "=== Does config BCMDHD exist anywhere? ==="
-          grep -rn "^config BCMDHD$" drivers/ || echo "NOT FOUND anywhere"
-          echo "=== Current CONFIG_MMC in defconfig ==="
-          grep "CONFIG_MMC=" arch/arm/configs/lineage_k3gxx_defconfig
+          export ARCH=arm
+          export CROSS_COMPILE="$TOOLCHAIN_BIN/arm-eabi-"
+
+          echo "=== full bcmdhd Kconfig entry ==="
+          find drivers -iname "Kconfig" | xargs grep -l "config BCMDHD$" || echo "NOT FOUND in any Kconfig file"
+          find drivers -iname "Kconfig" -exec grep -A5 "^config BCMDHD$" {} \;
+
+          echo "=== is it sourced from parent Kconfig? ==="
+          grep -rn "bcmdhd/Kconfig" drivers/net/wireless/Kconfig drivers/net/Kconfig 2>/dev/null || echo "NOT SOURCED"
+
+          echo "=== does the driver dir get built (Makefile) ==="
+          grep -rn "bcmdhd" drivers/net/wireless/Makefile 2>/dev/null || echo "NOT IN MAKEFILE"
+
+          echo "=== CONFIG_MMC status ==="
+          grep "CONFIG_MMC=" arch/arm/configs/lineage_k3gxx_defconfig || echo "NOT SET in defconfig"
+
+          echo "=== reserved memory in device tree ==="
+          grep -rln "bcmdhd\|wifi" arch/arm/boot/dts/ 2>/dev/null | xargs grep -i "reserved\|memory" 2>/dev/null || echo "NOT FOUND"
 
       - name: Build kernel
         run: |
