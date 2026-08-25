@@ -36,6 +36,15 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3 anykernel
 
+      - name: Debug BCMDHD Kconfig chain
+        run: |
+          echo "=== Is bcmdhd Kconfig sourced? ==="
+          grep -rn "bcmdhd" drivers/net/wireless/Kconfig || echo "NOT FOUND in wireless Kconfig"
+          echo "=== Does config BCMDHD exist anywhere? ==="
+          grep -rn "^config BCMDHD$" drivers/ || echo "NOT FOUND anywhere"
+          echo "=== Current CONFIG_MMC in defconfig ==="
+          grep "CONFIG_MMC=" arch/arm/configs/lineage_k3gxx_defconfig
+
       - name: Build kernel
         run: |
           export ARCH=arm
